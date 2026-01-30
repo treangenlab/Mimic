@@ -104,6 +104,7 @@ def run_mimic(args):
     error_ratio = args.difference_ratio
     bias = args.bias
     filter = args.filter
+    filter_db = args.filter_db
     method = args.method
     model = args.model
     len_mean = args.length_mean
@@ -149,7 +150,7 @@ def run_mimic(args):
     genome_file_loc = os.path.join(magnet_out, 'reference_genomes/merged.fasta')
 
     if filter:
-        fastq = run_filter(fastq, magnet_out, filter_out, threads)
+        genome_file_loc, fastq = run_filter(fastq, magnet_out, filter_out, filter_db, threads)
    
     # Get the current working directory where the files were generated
     working_dir = os.getcwd()
@@ -194,7 +195,8 @@ def parse_args():
     parser.add_argument('--accuracy-max', type=str, required=False, help='minimum accuracy for simulation, default 1.00')
     parser.add_argument('--difference-ratio', type=str, required=False, help='difference (error) ratio (default substitution:insertion:deletion = 6:55:39)')
     parser.add_argument('--bias', type=str, required=False, help='bias intensity of deletion in homopolymer')
-    parser.add_argument('--filter', action='store_true', help='Will filter input fastq for higher accuracy')
+    parser.add_argument('--filter', action='store_true', help='Will limit simulated reads to user defined databases at --filter_db')
+    parser.add_argument('--filter-db', type=str, required=False, help='Path to the filter database')
     parser.add_argument('--method', type=str, required=True, help='pbsim simulating method - sample, errhmm or qshmm')
     parser.add_argument('--model', type=str, required=False, help='pbsim simulating model')
     parser.add_argument('--length-mean', type=str, required=False, help='mean length (default 9000)')
@@ -218,14 +220,15 @@ def parse_args():
 
 
     if(args.method != "sample" and args.model is None):
-        raise SystemExit("errhmm and qshmm needs model")
+        raise SystemExit("Model must be provided when method is not 'sample'.")
+    
+    if args.filter and args.filter_db is None:
+        raise SystemExit("Filter database must be provided when --filter is set.")
     
     run_mimic(args) 
-    
     
 
 if __name__=='__main__':
     print_info()
     check_for_existing_files()
     parse_args()
-    

@@ -27,7 +27,7 @@ MIMIC runs the following steps from `mimic.py`:
 
 1. Checks that the provided output directory does not already exist. 
 2. Creates a new output directory with `lemur/`, `magnet/`, `filter/`, `pbsim/`, and `simulated_data/` subdirectories.
-3. If paired-end reads are supplied with `-I/--fastq2`, merges them with `pear` and uses the assembled FASTQ for downstream steps.
+3. If paired-end reads are supplied with `-I/--fastq2`, merges them with `pear` and uses the assembled FASTQ for downstream steps[^4].
 4. Runs Lemur against the user-provided Lemur database and writes `lemur/relative_abundance.tsv`[^2].
 5. Runs MAGnet on the Lemur abundance report to select and download representative reference genomes[^2].
 6. Optionally filters the MAGnet references and input reads with `--filter --filter-db`.
@@ -56,7 +56,7 @@ conda env create -f mimic_env.yml
 conda activate mimic_env
 ```
 
-The environment file includes the main command-line dependencies used by the current pipeline, including Python 3.9, Lemur, PBSIM3[^3], PEAR, minimap2, samtools, NCBI Datasets CLI, pandas, Biopython, and pysam.
+The environment file includes the main command-line dependencies used by the current pipeline, including Python 3.9, Lemur, PBSIM3[^3], PEAR[^4], minimap2[^5], samtools, NCBI Datasets CLI, pandas, Biopython, and pysam.
 
 To ensure that NCBI Datasets CLI is up-to-date and running smoothly, run the following commands after activating the conda environment before running MIMIC:
 ```bash
@@ -74,7 +74,7 @@ MIMIC requires:
 - `--db`: Lemur database directory. The pipeline expects this directory to include `taxonomy.tsv`.
 - `--method`: PBSIM3 simulation method. Use `sample`, `errhmm`, or `qshmm`.
 
-Optional paired-end input can be provided with `-I/--fastq2`. When this is used, MIMIC runs `pear` first and continues with the assembled FASTQ.
+Optional paired-end input can be provided with `-I/--fastq2`. When this is used, MIMIC runs `pear` first and continues with the assembled FASTQ[^4].
 
 ## Usage
 
@@ -223,3 +223,8 @@ Todd Treangen, Shwetha Kumar, Ryan Doughty, Sumaiya Khan, Iva Kotaskova, Arthur 
 [^2]: Sapoval, Nicolae, Yunxi Liu, Kristen Curry, Bryce Kille, Wenyu Huang, Natalie Kokroko, Michael G. Nute et al. "Lightweight taxonomic profiling of long-read sequenced metagenomes with Lemur and Magnet." bioRxiv (2024): 2024-06.
 
 [^3]: Ono, Yukiteru, Kiyoshi Asai, and Michiaki Hamada. "PBSIM3: a simulator for all types of PacBio and ONT long reads." NAR Genomics and Bioinformatics 4, no. 4 (2022): lqac092.
+
+[^4]: Zhang, Jiajie, Kassian Kobert, Tomáš Flouri, and Alexandros Stamatakis. 2013. "PEAR: A Fast and Accurate Illumina Paired-End reAd mergeR." Bioinformatics 30 (5): 614–20. btt593.
+
+[^5]: Li, Heng. 2018. “Minimap2: Pairwise Alignment for Nucleotide Sequences.” Bioinformatics 34 (18): 3094–3100. bty191.
+

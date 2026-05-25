@@ -10,6 +10,7 @@ def run_read_analysis(fastq:str, genome_list:str, out_loc:str, threads:int=1):
                     '-i', fastq,
                     '-gl', genome_list,
                     '-o', out_loc + '/training/training',
+                    '--fastq',
                     '-t', str(threads)], check=True)
     
 def run_sim(genome_list:str, abundance_list:str, species_list:str, out_loc:str, perfect:bool=False, threads:int=1):
@@ -21,6 +22,7 @@ def run_sim(genome_list:str, abundance_list:str, species_list:str, out_loc:str, 
                         '-dl', species_list,
                         '-c', out_loc + '/training/training',
                         '-o', out_loc + '/simulated',
+                        '--fastq',
                         '--perfect',
                         '-t', str(threads)], check=True)
     else:
@@ -30,110 +32,123 @@ def run_sim(genome_list:str, abundance_list:str, species_list:str, out_loc:str, 
                         '-dl', species_list,
                         '-c', out_loc + '/training/training',
                         '-o', out_loc + '/simulated',
+                        '--fastq',
                         '-t', str(threads)], check=True)
-
-def get_lemur_abundance(taxid, lemur_data):
-    try:
-        out = lemur_data[lemur_data['Target_ID'] == taxid]
-        if not out.empty:
-            return out['F'].values[0]
-        else:
-            return 0
-    except KeyError:
-        return 0
-
-def prep_sim_lemur(metadata_loc, lemur_data_loc, out, working, number_reads_generated):
-    
-    lemur_data = pd.read_csv(lemur_data_loc, delimiter='\t')
-    print(lemur_data)
-    metadata = pd.read_csv(metadata_loc)
-    genome_list = metadata[metadata['Presence/Absence'] == 'Present']
-    
-    ## get the abundances from lemur and normalize to sum to 100
-    genome_list['Abundance'] = genome_list['Taxonomy ID'].apply(lambda row: get_lemur_abundance(row, lemur_data))
-    
-    total_abundance = genome_list['Abundance'].sum()
-    if total_abundance > 0:
-        genome_list['Abundance'] = np.round(genome_list['Abundance'] / total_abundance * 100, 2)
-    
-    ## fix the locations names and drop unnecessary taxonomy column
-    genome_list['Assembly Accession ID'] = f'{working}/magnet/reference_genomes/' + genome_list['Assembly Accession ID'].astype(str) + '.fasta'
-
-    ## select final columns
-    genome_list = genome_list[['Organism of Assembly', 'Assembly Accession ID', 'Abundance']]
-    
-    abundances =  genome_list[['Organism of Assembly', 'Abundance']] 
-    
-    out_loc = os.path.join(out, 'abundances.tsv')
-    abundances.to_csv(out_loc, sep='\t', header=['Size', number_reads_generated], index=False)
-    
-    out_loc = os.path.join(out, 'genome_list1.tsv')
-    out_loc2 = os.path.join(out, 'genome_list2.tsv')
-    genome_list.to_csv(out_loc, sep='\t', header=False, index=False)
-    genome_list[['Organism of Assembly', 'Assembly Accession ID']].to_csv(out_loc2, sep='\t', header=False, index=False)
-    
-    return genome_list
-    
-def make_genome_list(metadata_loc, out):
-    metadata = pd.read_csv(metadata_loc)
-    genome_list = metadata[['Organism of Assembly', 'Assembly Accession ID']]
-    genome_list['Assembly Accession ID'] = 'test/magnet/reference_genomes/' + genome_list['Assembly Accession ID'].astype(str) + '.fasta'
-    
-    out_loc = os.path.join(out, 'genome_list.tsv')
-    genome_list.to_csv(out_loc, sep='\t', header=False, index=False)
-    
-    return genome_list
-
-
-def get_kraken_abundance(taxid, kraken_data):
-    try:
-        out = kraken_data[kraken_data['TaxID'] == taxid]
-        if not out.empty:
-            return out['Abundance'].values[0]
-        else:
-            return 0
-    except KeyError:
-        return 0
-
-def get_final_species_abundances(kraken_report, metadata_loc, out, number_reads_generated):
-    # Read kraken report and metadata
-    kraken_data = pd.read_csv(kraken_report, delimiter='\t', header=None, names=['Abundance', 'NumCovered', 'NumTaxon', 'Rank', 'TaxID', 'Name'])
-    metadata = pd.read_csv(metadata_loc)
-    
-    metadata = metadata[metadata['Presence/Absence'] == 'Present']
-    metadata['Abundance'] = metadata['Taxonomy ID'].apply(lambda row: get_kraken_abundance(row, kraken_data))
         
-    total_abundance = metadata['Abundance'].sum()
-    if total_abundance > 0:
-        metadata['Abundance'] = np.round(metadata['Abundance'] / total_abundance * 100, 2)
+def run_pbsim_sampling(fastq:str, fasta:str):
+    
+    subprocess.run(['pbsim',
+                    '--strategy', 'wgs',
+                    '--method', 'sample',               
+                    '--genome', fasta,
+                    '--sample', fastq,], check=True)
 
-    abundances =  metadata[['Organism of Assembly', 'Abundance']] 
-    
-    out_loc = os.path.join(out, 'abundances.tsv')
-    abundances.to_csv(out_loc, sep='\t', header=['Size', number_reads_generated], index=False)
-      
-    return abundances
+"""
+def run_pbsim_sampling_ext(fastq:str, fasta:str, output:str, depth=None, len_min=None, len_max=None, sample_profile_id=None, 
+                           accuracy_min=None, accuracy_max=None, error_ratio=None, bias=None, log_file='pbsim_run_log.txt'):
 
-def generate_species_file_info(genome_list, out):
-    
-    results = []
-    for _, row in genome_list.iterrows():
-        species = row['Organism of Assembly']
-        filename = row['Assembly Accession ID']  
-        
-        if os.path.exists(filename):
-            with open(filename, 'r') as file:
-                first_line = file.readline().strip()[1:]
-        else:
-            first_line = 'File not found'
-        
-        results.append([species, first_line, 'circular'])
-    
-    species_info = pd.DataFrame(results, columns=['Species', 'FirstLine', 'Circular'])
-    
-    out_loc = os.path.join(out, 'species_info.tsv')
-    species_info.to_csv(out_loc, sep='\t', header=False, index=False)
-    
-    return species_info
+    prefix = os.path.join(output, 'sd')
 
+    command = [
+            'pbsim',
+            '--strategy', 'wgs',
+            '--method', 'sample',
+            '--genome', fasta,
+            '--sample', fastq,
+            '--prefix', prefix
+        ]
 
+    if depth is not None:
+        command.extend(['--depth', str(depth)])
+    if len_min is not None:
+        command.extend(['--length-min', str(len_min)])
+    if len_max is not None:
+        command.extend(['--length-max', str(len_max)])
+    if sample_profile_id is not None:
+        command.extend(['--sample-profile-id', str(sample_profile_id)])
+    if accuracy_min is not None:
+        command.extend(['--accuracy-min', str(accuracy_min)])
+    if accuracy_max is not None:
+        command.extend(['--accuracy-max', str(accuracy_max)])
+    if error_ratio is not None:
+        command.extend(['--difference-ratio', str(error_ratio)])
+    if bias is not None:
+        command.extend(['--hp-del-bias', str(bias)])
+
+    command_str = " ".join(str(x) for x in command)
+    print("Running pbsim3 with:", command_str)
+    # Run the command and redirect stdout and stderr to a log file only.
+    with open(log_file, "a") as log:
+        subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=True)
+"""
+
+def run_pbsim_sampling_ext(fastq:str, fasta:str, output:str, method:str, depth=None, len_min=None, len_max=None, sample_profile_id=None, 
+                           accuracy_min=None, accuracy_max=None, error_ratio=None, bias=None, model=None, len_mean=None, 
+                           accuracy_mean=None, log_file='pbsim_run_log.txt'):
+
+    prefix = os.path.join(output, 'sd')
+
+    if model is not None:
+        model = "pbsim/" + model + ".model"
+
+    command = [
+        'pbsim',
+        '--strategy', 'wgs',
+        '--method', method,
+        '--genome', fasta,
+        '--prefix', prefix
+    ]
+
+    if method == "sample":
+        command.extend(['--sample', fastq])
+        """
+        command = [
+            'pbsim',
+            '--strategy', 'wgs',
+            '--method', 'sample',
+            '--genome', fasta,
+            '--sample', fastq,
+            '--prefix', prefix
+        ]
+        """
+    elif method == "errhmm":
+        command.extend(['--errhmm', model])
+    else:
+        command.extend(['--qshmm', model])
+        """
+        command = [
+            'pbsim',
+            '--strategy', 'wgs',
+            '--method', method,
+            '--qshmm', model,
+            '--genome', fasta,
+            '--prefix', prefix
+        ]
+        """
+
+    if depth is not None:
+        command.extend(['--depth', str(depth)])
+    if len_min is not None:
+        command.extend(['--length-min', str(len_min)])
+    if len_max is not None:
+        command.extend(['--length-max', str(len_max)])
+    if sample_profile_id is not None:
+        command.extend(['--sample-profile-id', str(sample_profile_id)])
+    if accuracy_min is not None:
+        command.extend(['--accuracy-min', str(accuracy_min)])
+    if accuracy_max is not None:
+        command.extend(['--accuracy-max', str(accuracy_max)])
+    if error_ratio is not None:
+        command.extend(['--difference-ratio', str(error_ratio)])
+    if bias is not None:
+        command.extend(['--hp-del-bias', str(bias)])
+    if len_mean is not None:
+        command.extend(['--length-mean', str(len_mean)])
+    if accuracy_mean is not None:
+        command.extend(['--accuracy-mean', str(accuracy_mean)])
+
+    command_str = " ".join(str(x) for x in command)
+    print("Running pbsim3 with:", command_str)
+    # Run the command and redirect stdout and stderr to a log file only.
+    with open(log_file, "a") as log:
+        subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=True)

@@ -1,6 +1,6 @@
 # MIMIC Metagenome Simulator
 
-MIMIC creates simulated metagenomic read sets that mimic the taxonomic composition of an existing sample. The current pipeline takes FASTQ input, profiles it with Lemur, refines reference-genome selection with MAGnet, optionally filters the selected genomes and reads against a user database, and simulates reads with PBSIM3.
+MIMIC creates simulated metagenomic read sets that mimic the taxonomic composition of an existing long-read sequencing sample[^1]. The current pipeline takes FASTQ input, profiles it with Lemur, refines reference-genome selection with MAGnet[^2], optionally filters the selected genomes and reads against a user database, and simulates reads with PBSIM3[^3].
 
 This project was initially conceptualized and built during the Baylor College of Medicine Human Genome Sequencing Center (HGSC) 2024 Hackathon, and has been modified since then.
 
@@ -28,10 +28,10 @@ MIMIC runs the following steps from `mimic.py`:
 1. Checks that the provided output directory does not already exist. 
 2. Creates a new output directory with `lemur/`, `magnet/`, `filter/`, `pbsim/`, and `simulated_data/` subdirectories.
 3. If paired-end reads are supplied with `-I/--fastq2`, merges them with `pear` and uses the assembled FASTQ for downstream steps.
-4. Runs Lemur against the user-provided Lemur database and writes `lemur/relative_abundance.tsv`.
-5. Runs MAGnet on the Lemur abundance report to select and download representative reference genomes.
+4. Runs Lemur against the user-provided Lemur database and writes `lemur/relative_abundance.tsv`[^2].
+5. Runs MAGnet on the Lemur abundance report to select and download representative reference genomes[^2].
 6. Optionally filters the MAGnet references and input reads with `--filter --filter-db`.
-7. Runs PBSIM3 using the selected genomes and the requested simulation method.
+7. Runs PBSIM3 using the selected genomes and the requested simulation method[^3].
 8. Concatenates PBSIM `*.fq.gz` files into `simulated_data/simulated.fastq`.
 
 ## Repository layout
@@ -56,7 +56,7 @@ conda env create -f mimic_env.yml
 conda activate mimic_env
 ```
 
-The environment file includes the main command-line dependencies used by the current pipeline, including Python 3.9, Lemur, PBSIM3, PEAR, minimap2, samtools, NCBI Datasets CLI, pandas, Biopython, and pysam.
+The environment file includes the main command-line dependencies used by the current pipeline, including Python 3.9, Lemur, PBSIM3[^3], PEAR, minimap2, samtools, NCBI Datasets CLI, pandas, Biopython, and pysam.
 
 To ensure that NCBI Datasets CLI is up-to-date and running smoothly, run the following commands after activating the conda environment before running MIMIC:
 ```bash
@@ -145,7 +145,7 @@ The filter database is read as a tab-delimited file and should contain a `taxid`
 
 ## PBSIM models
 
-Bundled model files are stored in `pbsim/`. Pass the model name without the `.model` suffix:
+Bundled PBSIM3 model files are stored in `pbsim/`[^3]. Pass the model name without the `.model` suffix:
 
 ```text
 ERRHMM-ONT-HQ

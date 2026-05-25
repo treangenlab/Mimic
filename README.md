@@ -4,7 +4,7 @@ MIMIC creates simulated metagenomic read sets that mimic the taxonomic compositi
 
 This project was initially conceptualized and built during the Baylor College of Medicine Human Genome Sequencing Center (HGSC) 2024 Hackathon, and has been modified since then.
 
-![MIMIC logo](docs/img/mimic_logo.png)
+![MIMIC logo](docs/img/logo_small.png)
 
 ## Contents
 

@@ -18,9 +18,9 @@ import glob, shutil
 import sys
 import gzip
 
-from src.tax_identification import run_bracken, run_kraken2, run_lemur, parse_magnet_output, run_metaphlan
-from src.sim import run_pbsim_sampling, run_pbsim_sampling_ext
-from src.utils import make_genome_list, generate_species_file_info, run_filter, prepare_sample_fasta
+from src.tax_identification import run_lemur
+from src.sim import run_pbsim_sampling_ext
+from src.utils import run_filter, prepare_sample_fasta
 
 __author__ = "Ryan Doughty, Eddy Huang, Yin Min Thant, Iva Kotaskova, Kasambula Arthur Shem, Shwetha Kumar, Mike Nute, Todd Treangen"
 __contact__ = "rdd4@rice.edu"
@@ -29,18 +29,6 @@ __license__ = "MIT"
 __version__ = "0.2"
 __email__ = "rdd4@rice.edu"
 __status__ = "Development"
-
-def check_for_existing_files():
-    """
-    Check if there are any files in the current directory ending with .fq.gz, .maf.gz, or .ref.
-    If found, print a warning and terminate the script.
-    """
-    patterns = ["*.fq.gz", "*.maf.gz", "*.ref"]
-    current_dir = os.getcwd()
-    for pattern in patterns:
-        if glob.glob(os.path.join(current_dir, pattern)):
-            print("Warning: remove any fastq, maf, and ref files in current working directory!")
-            sys.exit(1)
 
 def print_info():
     """
@@ -57,7 +45,7 @@ def initialize_working(working:str):
     """Initializes working directory, creates necessary sub directories"""
 
     if os.path.exists(working):
-        raise SystemExit('Initializing Working Directory Failed, working directory already exists')
+        raise SystemExit('Initializing Working Directory Failed, Working directory already exists')
     else:
         os.mkdir(working)
         
@@ -230,5 +218,4 @@ def parse_args():
 
 if __name__=='__main__':
     print_info()
-    check_for_existing_files()
     parse_args()

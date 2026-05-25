@@ -1,4 +1,4 @@
-name: mimic_env_march
+name: mimic_env
 channels:
   - r
   - defaults
